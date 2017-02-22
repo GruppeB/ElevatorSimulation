@@ -2,6 +2,8 @@ from collections import namedtuple
 from recordclass import recordclass
 from enum import IntEnum
 
+
+
 EnvironmentParameters = namedtuple(
     'EnvironmentParameters',
     [
@@ -117,6 +119,9 @@ class EnvironmentStream():
     def flush_elevator_stream(self, elevator):
         self.elevator_stream.flush()
 
+    def peek_elevator_stream(self, elevator):
+        return self.elevator_streams[elevator].peek()
+
 
 class ElevatorStream():
     def __init__():
@@ -153,38 +158,41 @@ def next_state_new_person(env_state, event):
     env_state.waiting_persons.append(new_waiting_person)
 
 def next_state_open_door(env_state, event):
-    elevator_state = env_state.elevator[event.elevator]
+    elevator_state = env_state.elevator_states[event.elevator]
     current_floor = elevator_state.position
     finished_persons = [
         p for p in elevator_state.persons
         if p.destination_floor == current_floor
     ]
 
-    assert elevator_state.open_door == False
-    elevator_state.open_door = True
+    assert elevator_state.door_open == False
+    assert elevator_state.direction == Direction.NONE
+    elevator_state.door_open = True
     for p in finished_persons:
         elevator_state.persons.remove(p)
         env_state.statistics.total_service_time += event.time - p.arrival_time
-        served_persons += 1
+        env_state.statistics.served_persons += 1
 
 def next_state_close_door(env_state, event):
-    elevator_state = env_state.elevator[event.elevator]
+    elevator_state = env_state.elevator_states[event.elevator]
     current_floor = elevator_state.position
-    assert elevator_state.open_door == True
-    elevator_state.open_door = False
+    assert elevator_state.door_open == True
+    assert elevator_state.direction == Direction.NONE
+    elevator_state.door_open = False
 
 def next_state_elevator_arrival(env_state, event):
-    elevator_state = env_state.elevator[event.elevator]
+    elevator_state = env_state.elevator_states[event.elevator]
     assert elevator_state.position != event.arrival_floor
     elevator_state.position = event.arrival_floor
     elevator_state.direction = Direction.NONE
 
 
 def next_state_load_elevator(env_state, event):
-    elevator_state = env_state.elevator[event.elevator]
+    elevator_state = env_state.elevator_states[event.elevator]
+    assert elevator_state.direction == Direction.NONE
     for p in event.persons_to_load:
         assert p.arrival_floor == elevator_state.position
-        elevator_state.persons.add(p.person)
+        elevator_state.persons.append(p.person)
         env_state.waiting_persons.remove(p)
 
 def next_state_elevator_departure(env_state, event):
@@ -196,3 +204,21 @@ def next_state(env_state, event):
         next_state_new_person(env_state, event)
     elif type(event) == OpenDoorEvent:
         next_state_open_door(env_state, event)
+    elif type(event) == CloseDoorEvent:
+        next_state_close_door(env_state, event)
+    elif type(event) == ElevatorArrivalEvent:
+        next_state_elevator_arrival(env_state, event)
+    elif type(event) == LoadElevatorEvent:
+        next_state_load_elevator(env_state, event)
+    else:
+        raise Exception("No such event!")
+
+def update_elevator_position(env_state, elevator_speed, next_elevator_events):
+    for elevator, elevator_state in env_state.elevator_states.items():
+        next_event = next_elevator_events[elevator]
+        if type(next_event) is ElevatorArrivalEvent:
+            travel_time = env_state.time - next_event.start_time
+            travel_distance = travel_time * elevator_speed
+            direction = elevator_state.direction
+            assert direction*(next_event.arrival_floor - next_event.start_position) > 0
+            elevator_state.position = next_event.start_position + travel_distance * direction
