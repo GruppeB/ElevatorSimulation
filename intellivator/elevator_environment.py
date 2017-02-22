@@ -27,6 +27,8 @@ ElevatorArrivalEvent = namedtuple(
 )
 OpenDoorEvent = namedtuple('OpenDoorEvent', ['elevator', 'time'])
 CloseDoorEvent = namedtuple('CloseDoorEvent', ['elevator', 'time'])
+LoadElevatorEvent = namedtuple('LoadElevatorEvent', ['elevator', 'time', 'persons_to_load'])
+ElevatorDepartureEvent = namedtuple('ElevatorDepartureEvent', ['elevator', 'time', 'direction'])
 
 class Direction(IntEnum):
     UP = 1
@@ -165,7 +167,29 @@ def next_state_open_door(env_state, event):
         env_state.statistics.total_service_time += event.time - p.arrival_time
         served_persons += 1
 
+def next_state_close_door(env_state, event):
+    elevator_state = env_state.elevator[event.elevator]
+    current_floor = elevator_state.position
+    assert elevator_state.open_door == True
+    elevator_state.open_door = False
 
+def next_state_elevator_arrival(env_state, event):
+    elevator_state = env_state.elevator[event.elevator]
+    assert elevator_state.position != event.arrival_floor
+    elevator_state.position = event.arrival_floor
+    elevator_state.direction = Direction.NONE
+
+
+def next_state_load_elevator(env_state, event):
+    elevator_state = env_state.elevator[event.elevator]
+    for p in event.persons_to_load:
+        assert p.arrival_floor == elevator_state.position
+        elevator_state.persons.add(p.person)
+        env_state.waiting_persons.remove(p)
+
+def next_state_elevator_departure(env_state, event):
+    elevator_state = env_state.elevator[event.elevator]
+    elevator_state.direction = event.direction
 
 def next_state(env_state, event):
     if type(event) == NewPersonEvent:
