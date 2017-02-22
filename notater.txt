@@ -1,0 +1,35 @@
+Events
+    New person
+        Legg til person i state
+
+    Elevator Arival
+        Flytt heis til etasje
+
+    Open
+        Endre door state
+        Fjern alle som skal ut i den etasjen du er i
+        Statistikk
+
+    Close
+        Endre door state
+
+    Load
+        Flytt personer fra waiting_persons til elevatorstate.persons
+
+NB! Husk at posisjonen til alle heisene må oppdateres for alle events
+
+Actions
+    Load persons and move elevator
+        Dører er åpene
+            Load
+            Close
+            Elevator arival
+            Open
+            Close
+        Dører er lukket
+            Load
+            Open
+            Close
+            Elevator arival
+            Open
+            Close
