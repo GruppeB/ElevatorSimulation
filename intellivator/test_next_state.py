@@ -119,7 +119,7 @@ class NextState(unittest.TestCase):
             start_position = 6,
             start_time = 10
         )}
-        update_elevator_position(state, self.params.elevator_speed, next_elevator_events)
+        update_elevator_positions(state, self.params.elevator_speed, next_elevator_events)
         self.assertEqual(state.elevator_states[self.elevators[0]].position, 2)
         self.assertAlmostEqual(state.elevator_states[self.elevators[1]].position, 6-(5/3))
 

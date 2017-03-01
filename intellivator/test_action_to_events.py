@@ -56,8 +56,19 @@ class ActionToEvents(unittest.TestCase):
         current_time = self.env_state.time
 
         start_time = current_time
+        departure_event = event_list[0]
+        self.assertEqual(
+            departure_event,
+            ElevatorDepartureEvent(
+                elevator = elevator,
+                time = start_time,
+                direction = Direction.UP
+            )
+        )
+
+
         current_time = start_time + (9-6) / self.params.elevator_speed
-        arrival_event = event_list[0]
+        arrival_event = event_list[1]
         self.assertEqual(
             arrival_event,
             ElevatorArrivalEvent(
@@ -70,7 +81,7 @@ class ActionToEvents(unittest.TestCase):
         )
 
         current_time += self.params.elevator_acceleration_duration + self.params.door_duration
-        open_event2 = event_list[1]
+        open_event2 = event_list[2]
         self.assertEqual(
             open_event2,
             OpenDoorEvent(
@@ -80,7 +91,7 @@ class ActionToEvents(unittest.TestCase):
         )
 
         current_time += self.params.door_duration
-        close_event2 = event_list[2]
+        close_event2 = event_list[3]
         self.assertEqual(
             close_event2,
             CloseDoorEvent(
@@ -108,9 +119,19 @@ class ActionToEvents(unittest.TestCase):
 
         current_time = self.env_state.time
 
+        departure_event = event_list[0]
         start_time = current_time + 2 * self.params.elevator_acceleration_duration
+        self.assertEqual(
+            departure_event,
+            ElevatorDepartureEvent(
+                elevator = elevator,
+                time = start_time,
+                direction = Direction.UP
+            )
+        )
+
         current_time = start_time + (9-6) / self.params.elevator_speed
-        arrival_event = event_list[0]
+        arrival_event = event_list[1]
         self.assertEqual(
             arrival_event,
             ElevatorArrivalEvent(
@@ -123,7 +144,7 @@ class ActionToEvents(unittest.TestCase):
         )
 
         current_time += self.params.elevator_acceleration_duration + self.params.door_duration
-        open_event2 = event_list[1]
+        open_event2 = event_list[2]
         self.assertEqual(
             open_event2,
             OpenDoorEvent(
@@ -133,7 +154,7 @@ class ActionToEvents(unittest.TestCase):
         )
 
         current_time += self.params.door_duration
-        close_event2 = event_list[2]
+        close_event2 = event_list[3]
         self.assertEqual(
             close_event2,
             CloseDoorEvent(
@@ -190,9 +211,20 @@ class ActionToEvents(unittest.TestCase):
             )
         )
 
+
         start_time = current_time + self.params.elevator_acceleration_duration
+
+        departure_event = event_list[3]
+        self.assertEqual(
+            departure_event,
+            ElevatorDepartureEvent(
+                elevator = elevator,
+                time = start_time,
+                direction = Direction.UP
+            )
+        )
         current_time = start_time + (9-6) / self.params.elevator_speed
-        arrival_event = event_list[3]
+        arrival_event = event_list[4]
         self.assertEqual(
             arrival_event,
             ElevatorArrivalEvent(
@@ -205,7 +237,7 @@ class ActionToEvents(unittest.TestCase):
         )
 
         current_time += self.params.elevator_acceleration_duration + self.params.door_duration
-        open_event2 = event_list[4]
+        open_event2 = event_list[5]
         self.assertEqual(
             open_event2,
             OpenDoorEvent(
@@ -215,7 +247,7 @@ class ActionToEvents(unittest.TestCase):
         )
 
         current_time += self.params.door_duration
-        close_event2 = event_list[5]
+        close_event2 = event_list[6]
         self.assertEqual(
             close_event2,
             CloseDoorEvent(

@@ -16,7 +16,7 @@ EnvironmentParameters = namedtuple(
 )
 
 NoEvent = namedtuple('NoEvent', ['time'])(float('inf'))
-NewPersonEvent = namedtuple('Event', ['time', 'arrival_floor', 'destination_floor'])
+NewPersonEvent = namedtuple('NewPersonEvent', ['time', 'arrival_floor', 'destination_floor'])
 ElevatorArrivalEvent = namedtuple(
     'ElevatorArrivalEvent',
     [
@@ -85,24 +85,39 @@ def _init_state(environment_parameters):
 
 def run_simulation(environment_parameters, person_stream, brain):
 
-   environment_state, elevators = _init_state(environment_parameters)
-   environment_stream = EnvironmentStream(person_stream, elevators)
+    environment_state, elevators = _init_state(environment_parameters)
+    environment_stream = EnvironmentStream(person_stream, elevators)
 
-   print(environment_state)
-   print(elevators)
+    while environment_stream.has_next_event():
+
+        print(environment_state)
+        print()
+        next_event = environment_stream.get_next_event()
+        print(next_event)
+        next_state(environment_state, next_event)
+
+        next_elevator_events = environment_stream.peek_elevator_streams()
+        update_elevator_positions(
+            environment_state,
+            environment_parameters.elevator_speed,
+            next_elevator_events
+        )
+        if type(next_event) is NewPersonEvent or type(next_event) is OpenDoorEvent:
+            print()
+            next_actions = brain.get_next_actions(environment_state, next_event)
+            print(next_actions)
+            print()
+            print()
+            for action in next_actions:
+                elevator_stream_update = action_to_events(action, environment_state, environment_parameters)
+                environment_stream.update_elevator_stream(elevator_stream_update)
 
 
-
-   # while environment_stream.has_next_event():
-   #     next_event = environment_stream.get_next_event()
-   #     environment_state = next_state(environment_state, next_event)
-    #    next_action = brain.get_next_action(environment_state, next_event)
-   #     environment_state = next_state(environment_state, next_action)
 
 class EnvironmentStream():
     def __init__(self, person_stream, elevators):
         self.person_stream = person_stream
-        self.elevator_streams = { e: ElevatorStream for e in elevators }
+        self.elevator_streams = { e: ElevatorStream() for e in elevators }
 
     def _get_earliest_stream(self):
         earliest_stream = self.person_stream
@@ -121,10 +136,13 @@ class EnvironmentStream():
         self.elevator_streams[elevator].add_event(event)
 
     def flush_elevator_stream(self, elevator):
-        self.elevator_stream.flush()
+        self.elevator_streams[elevator].flush()
 
-    def peek_elevator_stream(self, elevator):
-        return self.elevator_streams[elevator].peek()
+    def peek_elevator_streams(self):
+        return {
+            elevator: self.elevator_streams[elevator].peek()
+            for elevator in self.elevator_streams.keys()
+        }
 
     def update_elevator_stream(self, elevator_stream_update):
         elevator = elevator_stream_update.elevator
@@ -135,7 +153,7 @@ class EnvironmentStream():
 
 
 class ElevatorStream():
-    def __init__():
+    def __init__(self):
         self.events = []
 
     def get_next(self):
@@ -151,11 +169,12 @@ class ElevatorStream():
             return self.events[0]
 
     def add_event(self, event):
-        assert self.events or event.time > events[-1].time
+        if self.events:
+            assert self.events or event.time > self.events[-1].time
         self.events.append(event)
 
     def flush(self):
-        self.event = []
+        self.events = []
 
 def next_state_new_person(env_state, event):
     new_person = Person(
@@ -207,7 +226,7 @@ def next_state_load_elevator(env_state, event):
         env_state.waiting_persons.remove(p)
 
 def next_state_elevator_departure(env_state, event):
-    elevator_state = env_state.elevator[event.elevator]
+    elevator_state = env_state.elevator_states[event.elevator]
     elevator_state.direction = event.direction
 
 def next_state(env_state, event):
@@ -221,10 +240,13 @@ def next_state(env_state, event):
         next_state_elevator_arrival(env_state, event)
     elif type(event) == LoadElevatorEvent:
         next_state_load_elevator(env_state, event)
+    elif type(event) == ElevatorDepartureEvent:
+        next_state_elevator_departure(env_state, event)
     else:
         raise Exception("No such event!")
+    env_state.time = event.time
 
-def update_elevator_position(env_state, elevator_speed, next_elevator_events):
+def update_elevator_positions(env_state, elevator_speed, next_elevator_events):
     for elevator, elevator_state in env_state.elevator_states.items():
         next_event = next_elevator_events[elevator]
         if type(next_event) is ElevatorArrivalEvent:
@@ -248,6 +270,9 @@ def action_to_events(action, env_state, parameters):
     elevator_state = env_state.elevator_states[elevator]
     current_time = env_state.time
     eventlist = []
+
+    assert elevator_state.position != action.destination
+
     if elevator_state.direction == Direction.NONE:
         eventlist.append(
             LoadElevatorEvent(
@@ -280,6 +305,14 @@ def action_to_events(action, env_state, parameters):
         start_time += parameters.elevator_acceleration_duration
     elif elevator_state.direction != new_direction:
         start_time += parameters.elevator_acceleration_duration * 2
+
+    eventlist.append(
+        ElevatorDepartureEvent(
+            elevator = elevator,
+            time = start_time,
+            direction = new_direction
+        )
+    )
 
     current_time = start_time + abs(elevator_state.position - action.destination) / parameters.elevator_speed
     eventlist.append(
