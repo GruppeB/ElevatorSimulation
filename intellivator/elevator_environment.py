@@ -32,6 +32,10 @@ CloseDoorEvent = namedtuple('CloseDoorEvent', ['elevator', 'time'])
 LoadElevatorEvent = namedtuple('LoadElevatorEvent', ['elevator', 'time', 'persons_to_load'])
 ElevatorDepartureEvent = namedtuple('ElevatorDepartureEvent', ['elevator', 'time', 'direction'])
 
+Action = namedtuple('Action', ['elevator', 'time', 'persons_to_load', 'destination'])
+ElevatorStreamUpdate = namedtuple('ElevatorStreamUpdate', ['elevator', 'events'])
+
+
 class Direction(IntEnum):
     UP = 1
     NONE = 0
@@ -92,7 +96,7 @@ def run_simulation(environment_parameters, person_stream, brain):
    # while environment_stream.has_next_event():
    #     next_event = environment_stream.get_next_event()
    #     environment_state = next_state(environment_state, next_event)
-   #     next_action = brain.get_next_action(environment_state, next_event)
+    #    next_action = brain.get_next_action(environment_state, next_event)
    #     environment_state = next_state(environment_state, next_action)
 
 class EnvironmentStream():
@@ -121,6 +125,13 @@ class EnvironmentStream():
 
     def peek_elevator_stream(self, elevator):
         return self.elevator_streams[elevator].peek()
+
+    def update_elevator_stream(self, elevator_stream_update):
+        elevator = elevator_stream_update.elevator
+        events = elevator_stream_update.events
+        self.flush_elevator_stream(elevator)
+        for event in events:
+            self.add_elevator_event(elevator, event)
 
 
 class ElevatorStream():
@@ -222,3 +233,79 @@ def update_elevator_position(env_state, elevator_speed, next_elevator_events):
             direction = elevator_state.direction
             assert direction*(next_event.arrival_floor - next_event.start_position) > 0
             elevator_state.position = next_event.start_position + travel_distance * direction
+
+def get_direction(from_pos, to_pos):
+    if to_pos - from_pos > 0:
+        return Direction.UP
+    elif to_pos - from_pos < 0:
+        return Direction.DOWN
+    else:
+        return Direction.NONE
+
+
+def action_to_events(action, env_state, parameters):
+    elevator = action.elevator
+    elevator_state = env_state.elevators[elevator]
+    current_time = env_state.time
+    eventlist = []
+    if elevator_state.direction == Direction.NONE:
+        eventlist.append(
+            LoadElevatorEvent(
+                elevator = elevator,
+                time = current_time,
+                persons_to_load = action.persons_to_load
+            )
+        )
+        if not env_state.elevator_states[elevator].door_open:
+            current_time += parameters.door_duration
+            eventlist.append(
+                OpenDoorEvent(
+                    elevator = elevator,
+                    time = current_time
+                )
+            )
+        current_time += parameters.door_duration
+        eventlist.append(
+            CloseDoorEvent(
+                elevator = elevator,
+                time = current_time
+            )
+        )
+    else:
+        assert not action.persons_to_load
+
+    start_time = current_time
+    new_direction = get_direction(elevator_state.position, action.destination)
+    if elevator_state.direction == Direction.NONE:
+        start_time += parameters.elevator_acceleration_duration
+    elif elevator_state.direnction != new_direction:
+        start_time += parameters.elevator_acceleration_duration * 2
+
+    current_time = start_time + abs(elevator_state.position - action.destination) / parameters.elevator_speed
+    eventlist.append(
+        ElevatorArrivalEvent(
+            elevator = elevator,
+            time = current_time,
+            arrival_floor = action.destination,
+            start_position = elevator_state.position,
+            start_time = start_time
+        )
+    )
+    current_time += parameters.elevator_acceleration_duration + parameters.door_duration
+    eventlist.append(
+        OpenDoorEvent(
+            elevator = elevator,
+            time = current_time
+        )
+    )
+    current_time += parameters.door_duration
+    eventlist.append(
+        CloseDoorEvent(
+            elevator = elevator,
+            time = current_time
+        )
+    )
+    return ElevatorStreamUpdate(
+        elevator = elevator,
+        events = eventlist
+    )
