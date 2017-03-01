@@ -32,7 +32,7 @@ CloseDoorEvent = namedtuple('CloseDoorEvent', ['elevator', 'time'])
 LoadElevatorEvent = namedtuple('LoadElevatorEvent', ['elevator', 'time', 'persons_to_load'])
 ElevatorDepartureEvent = namedtuple('ElevatorDepartureEvent', ['elevator', 'time', 'direction'])
 
-Action = namedtuple('Action', ['elevator', 'time', 'persons_to_load', 'destination'])
+Action = namedtuple('Action', ['elevator', 'persons_to_load', 'destination'])
 ElevatorStreamUpdate = namedtuple('ElevatorStreamUpdate', ['elevator', 'events'])
 
 
@@ -245,7 +245,7 @@ def get_direction(from_pos, to_pos):
 
 def action_to_events(action, env_state, parameters):
     elevator = action.elevator
-    elevator_state = env_state.elevators[elevator]
+    elevator_state = env_state.elevator_states[elevator]
     current_time = env_state.time
     eventlist = []
     if elevator_state.direction == Direction.NONE:
@@ -278,7 +278,7 @@ def action_to_events(action, env_state, parameters):
     new_direction = get_direction(elevator_state.position, action.destination)
     if elevator_state.direction == Direction.NONE:
         start_time += parameters.elevator_acceleration_duration
-    elif elevator_state.direnction != new_direction:
+    elif elevator_state.direction != new_direction:
         start_time += parameters.elevator_acceleration_duration * 2
 
     current_time = start_time + abs(elevator_state.position - action.destination) / parameters.elevator_speed
