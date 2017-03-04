@@ -144,7 +144,7 @@ class EnvironmentStream():
             next_event_peek = self._get_earliest_stream().peek()
             assert next_event_peek.time >= current_time
             if next_event_peek.time - current_time > self.idle_time:
-                next_event = TimePassedEvent(time = current_time + self.idle_time)
+                return TimePassedEvent(time = current_time + self.idle_time)
             else:
                 return self._get_earliest_stream().get_next()
         return NoEvent
@@ -263,6 +263,8 @@ def next_state(env_state, event):
         next_state_load_elevator(env_state, event)
     elif type(event) == ElevatorDepartureEvent:
         next_state_elevator_departure(env_state, event)
+    elif type(event) == TimePassedEvent:
+        pass
     else:
         raise Exception("No such event!")
     env_state.time = event.time
