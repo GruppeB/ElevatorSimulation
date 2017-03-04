@@ -299,28 +299,30 @@ def action_to_events(action, env_state, parameters):
     assert elevator_state.position != action.destination
 
     if elevator_state.direction == Direction.NONE:
-        eventlist.append(
-            LoadElevatorEvent(
-                elevator = elevator,
-                time = current_time,
-                persons_to_load = action.persons_to_load
+        if action.persons_to_load:
+            eventlist.append(
+                LoadElevatorEvent(
+                    elevator = elevator,
+                    time = current_time,
+                    persons_to_load = action.persons_to_load
+                )
             )
-        )
-        if not env_state.elevator_states[elevator].door_open:
+            if not elevator_state.door_open:
+                current_time += parameters.door_duration
+                eventlist.append(
+                    OpenDoorEvent(
+                        elevator = elevator,
+                        time = current_time
+                    )
+                )
+        if action.persons_to_load or elevator_state.door_open:
             current_time += parameters.door_duration
             eventlist.append(
-                OpenDoorEvent(
+                CloseDoorEvent(
                     elevator = elevator,
                     time = current_time
                 )
             )
-        current_time += parameters.door_duration
-        eventlist.append(
-            CloseDoorEvent(
-                elevator = elevator,
-                time = current_time
-            )
-        )
     else:
         assert not action.persons_to_load
 
