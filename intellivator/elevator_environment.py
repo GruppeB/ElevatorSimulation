@@ -249,6 +249,7 @@ def next_state_load_elevator(env_state, event):
         assert p.arrival_floor == elevator_state.position
         elevator_state.persons.append(p.person)
         env_state.waiting_persons.remove(p)
+        env_state.statistics.total_waiting_time += env_state.time - p.person.arrival_time
 
 def next_state_elevator_departure(env_state, event):
     elevator_state = env_state.elevator_states[event.elevator]
