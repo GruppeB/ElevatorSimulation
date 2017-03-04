@@ -104,11 +104,6 @@ def run_simulation(
     while environment_stream.has_next_event():
         next_event = environment_stream.get_next_event(environment_state.time)
         next_state(environment_state, next_event)
-        print(next_event)
-        print()
-        print(environment_state)
-        print()
-        print()
         next_elevator_events = environment_stream.peek_elevator_streams()
         update_elevator_positions(
             environment_state,
