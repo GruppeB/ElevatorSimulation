@@ -11,7 +11,8 @@ class ActionToEvents(unittest.TestCase):
             number_of_floors=13,
             elevator_acceleration_duration=2,
             elevator_speed=1/3,
-            door_duration=2
+            door_duration=2,
+            idle_time=float('inf')
         )
         env_state, elevators = _init_state(self.params)
 

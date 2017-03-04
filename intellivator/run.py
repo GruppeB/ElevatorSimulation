@@ -2,6 +2,10 @@ from intellivator.elevator_environment import *
 from intellivator.PersonStream import PersonStream
 
 class NoBrain():
+
+    def init(self, env_state):
+        pass
+
     def get_next_actions(self, env_state, next_event):
         elevators = list(env_state.elevator_states.keys())
         actions = [
@@ -17,7 +21,8 @@ def main():
         number_of_floors=13,
         elevator_acceleration_duration=2,
         elevator_speed=3,
-        door_duration=2
+        door_duration=2,
+        idle_time = float('inf')
     )
 
     personstream =  PersonStream(open("test.txt","r"))

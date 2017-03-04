@@ -11,11 +11,13 @@ EnvironmentParameters = namedtuple(
         'number_of_floors',
         'elevator_acceleration_duration',
         'elevator_speed',
-        'door_duration'
+        'door_duration',
+        'idle_time'
     ]
 )
 
 NoEvent = namedtuple('NoEvent', ['time'])(float('inf'))
+TimePassedEvent = namedtuple('TimePassedEvent', ['time'])
 NewPersonEvent = namedtuple('NewPersonEvent', ['time', 'arrival_floor', 'destination_floor'])
 ElevatorArrivalEvent = namedtuple(
     'ElevatorArrivalEvent',
@@ -83,41 +85,57 @@ def _init_state(environment_parameters):
 
     return EnvironmentState(elevator_states, 0, [], stats), elevators
 
-def run_simulation(environment_parameters, person_stream, brain):
+def run_simulation(
+        environment_parameters,
+        person_stream,
+        brain,
+        state_change_hook = lambda *args: None
+):
 
     environment_state, elevators = _init_state(environment_parameters)
-    environment_stream = EnvironmentStream(person_stream, elevators)
+    environment_stream = EnvironmentStream(
+        person_stream,
+        elevators,
+        environment_parameters.idle_time
+    )
 
+    state_change_hook(environment_state, NoEvent)
+    brain.init(environment_state)
     while environment_stream.has_next_event():
-
+        next_event = environment_stream.get_next_event(environment_state.time)
+        next_state(environment_state, next_event)
+        print(next_event)
+        print()
         print(environment_state)
         print()
-        next_event = environment_stream.get_next_event()
-        print(next_event)
-        next_state(environment_state, next_event)
-
+        print()
         next_elevator_events = environment_stream.peek_elevator_streams()
         update_elevator_positions(
             environment_state,
             environment_parameters.elevator_speed,
             next_elevator_events
         )
+
+        state_change_hook(environment_state, next_event)
         if type(next_event) is NewPersonEvent or type(next_event) is OpenDoorEvent:
-            print()
             next_actions = brain.get_next_actions(environment_state, next_event)
-            print(next_actions)
-            print()
-            print()
             for action in next_actions:
-                elevator_stream_update = action_to_events(action, environment_state, environment_parameters)
+                elevator_stream_update = action_to_events(
+                    action,
+                    environment_state,
+                    environment_parameters
+                )
                 environment_stream.update_elevator_stream(elevator_stream_update)
+
+    return environment_state.time, environment_state.statistics
 
 
 
 class EnvironmentStream():
-    def __init__(self, person_stream, elevators):
+    def __init__(self, person_stream, elevators, idle_time):
         self.person_stream = person_stream
         self.elevator_streams = { e: ElevatorStream() for e in elevators }
+        self.idle_time = idle_time
 
     def _get_earliest_stream(self):
         earliest_stream = self.person_stream
@@ -126,8 +144,15 @@ class EnvironmentStream():
                 earliest_stream = elevator_stream
         return earliest_stream
 
-    def get_next_event(self):
-        return self._get_earliest_stream().get_next()
+    def get_next_event(self, current_time):
+        if self.has_next_event():
+            next_event_peek = self._get_earliest_stream().peek()
+            assert next_event_peek.time >= current_time
+            if next_event_peek.time - current_time > self.idle_time:
+                next_event = TimePassedEvent(time = current_time + self.idle_time)
+            else:
+                return self._get_earliest_stream().get_next()
+        return NoEvent
 
     def has_next_event(self):
         return self._get_earliest_stream().peek() != NoEvent
