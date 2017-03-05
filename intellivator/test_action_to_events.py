@@ -17,7 +17,7 @@ class ActionToEvents(unittest.TestCase):
         )
         env_state, elevators = _init_state(self.params)
 
-        env_state._replace_elevator_state(elevators[1], position = 6)
+        env_state = env_state._replace_elevator_state(elevators[1], position = 6)
 
         self.person1 = WaitingPerson(
             Person(arrival_time = 90 , destination_floor = 9),
@@ -31,7 +31,12 @@ class ActionToEvents(unittest.TestCase):
             Person(arrival_time = 92 , destination_floor = 8),
             arrival_floor = 2
             )
-        env_state.waiting_persons.extend([self.person1, self.person2, self.person3])
+        env_state._replace(
+            waiting_persons = (
+                env_state.waiting_persons
+                + (self.person1, self.person2, self.person3)
+            )
+        )
 
         self.env_state = env_state
         self.elevators = elevators
@@ -40,7 +45,10 @@ class ActionToEvents(unittest.TestCase):
 
     def test_action_to_event_direction_up(self):
         elevator = self.elevators[1]
-        self.env_state._replace_elevator_state(elevator, direction = Direction.UP)
+        self.env_state = self.env_state._replace_elevator_state(
+            elevator,
+            direction = Direction.UP
+        )
         elevator_stream_update =  action_to_events(
             Action(
                 elevator = elevator,
@@ -103,7 +111,10 @@ class ActionToEvents(unittest.TestCase):
 
     def test_action_to_event_direction_down(self):
         elevator = self.elevators[1]
-        self.env_state._replace_elevator_state(elevator, direction = Direction.DOWN)
+        self.env_state = self.env_state._replace_elevator_state(
+            elevator,
+            direction = Direction.DOWN
+        )
         elevator_stream_update =  action_to_events(
             Action(
                 elevator = elevator,
@@ -164,7 +175,7 @@ class ActionToEvents(unittest.TestCase):
         )
     def test_action_to_event_direction_none(self):
         elevator = self.elevators[1]
-        self.env_state._replace_elevator_state(elevator, direction = Direction.NONE)
+        self.env_state = self.env_state._replace_elevator_state(elevator, direction = Direction.NONE)
         elevator_stream_update =  action_to_events(
             Action(
                 elevator = elevator,
