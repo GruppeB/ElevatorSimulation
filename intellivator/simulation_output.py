@@ -1,3 +1,8 @@
+from math import log10, ceil
+
+from intellivator.elevator_environment import NewPersonEvent
+
+
 class SimulationDump():
     def __init__(self, output_file, env_params):
         self.output_file = output_file
@@ -27,6 +32,29 @@ class SimulationDump():
 
     def close(self):
         self.output_file.close()
+
+
+class ProgressOutput():
+    def __init__(self, arrivals_file, output_file):
+        self.number_of_arrivals = sum(1 for _ in arrivals_file)
+        arrivals_file.seek(0)
+        self.output_file = output_file
+        self.arrivals_count = 0
+        self._update()
+
+    def env_state_has_changed(self, old_env_state, event, new_env_state):
+        if type(event) is NewPersonEvent:
+            self.arrivals_count += 1
+        self._update()
+
+    def _update(self):
+        width = int(max(1, ceil(log10(self.number_of_arrivals))))
+        self.output_file.write('\rProgress: {} / {}'.format(
+            str(self.arrivals_count).rjust(width), self.number_of_arrivals
+        ))
+
+    def done(self):
+        self.output_file.write('\n')
 
 
 def write_summary(duration, statistics, output_file):

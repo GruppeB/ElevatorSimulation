@@ -6,14 +6,14 @@ from intellivator import elevator_environment
 from intellivator.PersonStream import PersonStream
 from intellivator.SimpleSingleElevator import SimpleSingleElevator
 from intellivator.simulation_output import SimulationDump
+from intellivator.simulation_output import ProgressOutput
 from intellivator.simulation_output import write_summary
+
 
 def run(args):
     params = elevator_environment.EnvironmentParameters(
         **json.load(args.env_params_file)
     )
-
-    personstream =  PersonStream(args.arrivals_file)
 
     brain = None
     if args.brain == 'SimpleSingleElevator':
@@ -28,13 +28,22 @@ def run(args):
         simulation_dump = SimulationDump(args.dump_file, params)
         state_change_listeners.append(simulation_dump.env_state_has_changed)
 
+    print()
+    print('-' * 80)
+    print()
 
+    progress_output = ProgressOutput(args.arrivals_file, sys.stdout)
+    state_change_listeners.append(progress_output.env_state_has_changed)
+
+    personstream = PersonStream(args.arrivals_file)
     duration, statistics = elevator_environment.run_simulation(
         params,
         personstream,
         brain,
         state_change_listeners
     )
+
+    progress_output.done()
 
     if simulation_dump:
         simulation_dump.close()
