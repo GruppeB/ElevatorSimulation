@@ -32,7 +32,8 @@ class NextState(unittest.TestCase):
 
     def test_close_door(self):
         state = self.env_state
-        state.elevator_states[self.elevators[1]].door_open = True
+        elevator_state = state.elevator_states[self.elevators[1]]
+        state.elevator_states[self.elevators[1]] = elevator_state._replace(door_open = True)
         next_state(state, CloseDoorEvent(
             elevator = self.elevators[1],
             time = 40
@@ -41,7 +42,8 @@ class NextState(unittest.TestCase):
 
     def test_elevator_arrival(self):
         state = self.env_state
-        state.elevator_states[self.elevators[1]].direction = Direction.UP
+        elevator_state = state.elevator_states[self.elevators[1]]
+        state.elevator_states[self.elevators[1]] = elevator_state._replace(direction = Direction.UP)
         next_state(state, ElevatorArrivalEvent(
             elevator = self.elevators[1],
             time = 50,
@@ -53,17 +55,22 @@ class NextState(unittest.TestCase):
 
     def test_open_door(self):
         state = self.env_state
-        state.elevator_states[self.elevators[1]].persons.extend([
-            Person(
-                arrival_time = 20,
-                destination_floor = 2
-            ),
-            Person(
-                arrival_time = 21,
-                destination_floor = 7
+        elevator_state = state.elevator_states[self.elevators[1]]
+        state._replace_elevator_state(
+            self.elevators[1],
+            persons = elevator_state.persons + (
+                Person(
+                    arrival_time = 20,
+                    destination_floor = 2
+                ),
+                Person(
+                    arrival_time = 21,
+                    destination_floor = 7
+                )
             )
-        ])
-        state.elevator_states[self.elevators[1]].position = 2
+        )
+        elevator_state = state.elevator_states[self.elevators[1]]
+        state._replace_elevator_state(self.elevators[1], position = 2)
         next_state(state, OpenDoorEvent(
             elevator = self.elevators[1],
             time = 41
@@ -76,7 +83,8 @@ class NextState(unittest.TestCase):
 
     def test_load_elevator(self):
         state = self.env_state
-        state.elevator_states[self.elevators[1]].position = 2
+        elevator_state = state.elevator_states[self.elevators[1]]
+        state.elevator_states[self.elevators[1]] = elevator_state._replace(position = 2)
         person1 = WaitingPerson(
             Person(arrival_time = 90 , destination_floor = 6),
             arrival_floor = 2
@@ -98,6 +106,7 @@ class NextState(unittest.TestCase):
                 person1
             ]
         ))
+
         self.assertIn(person2, state.waiting_persons)
         self.assertIn(person3, state.waiting_persons)
         self.assertNotIn(person1, state.waiting_persons)
@@ -109,11 +118,17 @@ class NextState(unittest.TestCase):
         state = self.env_state
         state.time = 15
 
-        state.elevator_states[self.elevators[0]].position = 2
-        state.elevator_states[self.elevators[0]].direction = Direction.NONE
+        state._replace_elevator_state(
+            self.elevators[0],
+            position = 2,
+            direction = Direction.NONE
+        )
 
-        state.elevator_states[self.elevators[1]].position = 5.5
-        state.elevator_states[self.elevators[1]].direction = Direction.DOWN
+        state._replace_elevator_state(
+            self.elevators[1],
+            position = 5.5,
+            direction = Direction.DOWN
+        )
 
         next_elevator_events = {self.elevators[0]: NoEvent, self.elevators[1]: ElevatorArrivalEvent(
             elevator = self.elevators[1],

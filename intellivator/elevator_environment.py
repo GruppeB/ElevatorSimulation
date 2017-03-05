@@ -46,7 +46,7 @@ class Direction(IntEnum):
 
 Person = namedtuple('Person', ['arrival_time', 'destination_floor'])
 WaitingPerson = namedtuple('WaitingPerson', ['person', 'arrival_floor'])
-ElevatorState = recordclass(
+ElevatorState = namedtuple(
     'ElevatorState',
     [
         'position',
@@ -55,7 +55,7 @@ ElevatorState = recordclass(
         'door_open'
     ]
 )
-Statistics = recordclass(
+Statistics = namedtuple(
     'Statistics',
     [
         'total_service_time',
@@ -63,10 +63,12 @@ Statistics = recordclass(
         'served_persons'
     ]
 )
-EnvironmentState = recordclass(
+class EnvironmentState(recordclass(
     'EnvironmentState',
     ['elevator_states', 'time', 'waiting_persons', 'statistics']
-)
+)):
+    def _replace_elevator_state(self, elevator, **kwargs):
+        self.elevator_states[elevator] = self.elevator_states[elevator]._replace(**kwargs)
 
 Elevator = namedtuple('Elevator', ['id'])
 
@@ -74,7 +76,7 @@ def _init_state(environment_parameters):
 
     elevators = [Elevator(i) for i in range(environment_parameters.number_of_elevators)]
     elevator_states = {
-        elevator: ElevatorState(0, Direction.NONE, [], False)
+        elevator: ElevatorState(0, Direction.NONE, tuple(), False)
         for elevator in elevators
     }
 
@@ -218,38 +220,58 @@ def next_state_open_door(env_state, event):
 
     assert elevator_state.door_open == False
     assert elevator_state.direction == Direction.NONE
-    elevator_state.door_open = True
+    elevator_state = elevator_state._replace(door_open = True)
+    elevator_state = elevator_state._replace(
+        persons = tuple(p for p in elevator_state.persons if p not in finished_persons)
+    )
     for p in finished_persons:
-        elevator_state.persons.remove(p)
-        env_state.statistics.total_service_time += event.time - p.arrival_time
-        env_state.statistics.served_persons += 1
+        stats = env_state.statistics
+        env_state.statistics = stats._replace(
+            total_service_time = stats.total_service_time + event.time - p.arrival_time,
+            served_persons = stats.served_persons + 1
+        )
+
+    env_state.elevator_states[event.elevator] = elevator_state
 
 def next_state_close_door(env_state, event):
     elevator_state = env_state.elevator_states[event.elevator]
     current_floor = elevator_state.position
     assert elevator_state.door_open == True
     assert elevator_state.direction == Direction.NONE
-    elevator_state.door_open = False
+
+    env_state.elevator_states[event.elevator] = elevator_state._replace(
+        door_open = False
+    )
 
 def next_state_elevator_arrival(env_state, event):
     elevator_state = env_state.elevator_states[event.elevator]
     assert elevator_state.direction != Direction.NONE
-    elevator_state.position = event.arrival_floor
-    elevator_state.direction = Direction.NONE
+    env_state.elevator_states[event.elevator] = elevator_state._replace(
+        position = event.arrival_floor,
+        direction = Direction.NONE
+    )
 
 
 def next_state_load_elevator(env_state, event):
     elevator_state = env_state.elevator_states[event.elevator]
     assert elevator_state.direction == Direction.NONE
+
+    env_state.elevator_states[event.elevator] = elevator_state._replace(
+        persons = elevator_state.persons + tuple(wp.person for wp in event.persons_to_load)
+    )
     for p in event.persons_to_load:
         assert p.arrival_floor == elevator_state.position
-        elevator_state.persons.append(p.person)
         env_state.waiting_persons.remove(p)
-        env_state.statistics.total_waiting_time += env_state.time - p.person.arrival_time
+        stats = env_state.statistics
+        env_state.statistics = stats._replace(
+            total_waiting_time = stats.total_waiting_time + env_state.time - p.person.arrival_time
+        )
 
 def next_state_elevator_departure(env_state, event):
     elevator_state = env_state.elevator_states[event.elevator]
-    elevator_state.direction = event.direction
+    env_state.elevator_states[event.elevator] = elevator_state._replace(
+        direction = event.direction
+    )
 
 def next_state(env_state, event):
     if type(event) == NewPersonEvent:
@@ -278,7 +300,10 @@ def update_elevator_positions(env_state, elevator_speed, next_elevator_events):
             travel_distance = travel_time * elevator_speed
             direction = elevator_state.direction
             assert direction*(next_event.arrival_floor - next_event.start_position) > 0
-            elevator_state.position = next_event.start_position + travel_distance * direction
+            env_state._replace_elevator_state(
+                elevator,
+                position = next_event.start_position + travel_distance * direction
+            )
 
 def get_direction(from_pos, to_pos):
     if to_pos - from_pos > 0:

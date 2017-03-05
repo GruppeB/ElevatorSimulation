@@ -17,7 +17,7 @@ class ActionToEvents(unittest.TestCase):
         )
         env_state, elevators = _init_state(self.params)
 
-        env_state.elevator_states[elevators[1]].position = 6
+        env_state._replace_elevator_state(elevators[1], position = 6)
 
         self.person1 = WaitingPerson(
             Person(arrival_time = 90 , destination_floor = 9),
@@ -40,8 +40,7 @@ class ActionToEvents(unittest.TestCase):
 
     def test_action_to_event_direction_up(self):
         elevator = self.elevators[1]
-        elevator_state = self.env_state.elevator_states[elevator]
-        elevator_state.direction = Direction.UP
+        self.env_state._replace_elevator_state(elevator, direction = Direction.UP)
         elevator_stream_update =  action_to_events(
             Action(
                 elevator = elevator,
@@ -104,8 +103,7 @@ class ActionToEvents(unittest.TestCase):
 
     def test_action_to_event_direction_down(self):
         elevator = self.elevators[1]
-        elevator_state = self.env_state.elevator_states[elevator]
-        elevator_state.direction = Direction.DOWN
+        self.env_state._replace_elevator_state(elevator, direction = Direction.DOWN)
         elevator_stream_update =  action_to_events(
             Action(
                 elevator = elevator,
@@ -166,8 +164,7 @@ class ActionToEvents(unittest.TestCase):
         )
     def test_action_to_event_direction_none(self):
         elevator = self.elevators[1]
-        elevator_state = self.env_state.elevator_states[elevator]
-        elevator_state.direction = Direction.NONE
+        self.env_state._replace_elevator_state(elevator, direction = Direction.NONE)
         elevator_stream_update =  action_to_events(
             Action(
                 elevator = elevator,
