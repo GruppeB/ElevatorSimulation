@@ -41,6 +41,7 @@ class NextState(unittest.TestCase):
 
     def test_elevator_arrival(self):
         state = self.env_state
+        state.elevator_states[self.elevators[1]].direction = Direction.UP
         next_state(state, ElevatorArrivalEvent(
             elevator = self.elevators[1],
             time = 50,
