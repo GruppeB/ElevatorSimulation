@@ -8,6 +8,7 @@ EnvironmentParameters = namedtuple(
     'EnvironmentParameters',
     [
         'number_of_elevators',
+        'elevator_capacity',
         'number_of_floors',
         'elevator_acceleration_duration',
         'elevator_speed',
@@ -232,7 +233,7 @@ def next_state_close_door(env_state, event):
 
 def next_state_elevator_arrival(env_state, event):
     elevator_state = env_state.elevator_states[event.elevator]
-    assert elevator_state.position != event.arrival_floor
+    assert elevator_state.direction != Direction.NONE
     elevator_state.position = event.arrival_floor
     elevator_state.direction = Direction.NONE
 
@@ -294,7 +295,12 @@ def action_to_events(action, env_state, parameters):
     current_time = env_state.time
     eventlist = []
 
-    assert elevator_state.position != action.destination
+    if elevator_state.position == action.destination:
+        raise Exception('The elevator is already at the destination floor')
+    if not float(action.destination).is_integer():
+        raise Exception("Can't move to an interpolation of floors")
+    if len(elevator_state.persons) + len(action.persons_to_load) > parameters.elevator_capacity:
+        raise Exception("Can't exceed the elevator capacity")
 
     if elevator_state.direction == Direction.NONE:
         if action.persons_to_load:

@@ -24,6 +24,7 @@ class RunSimulationSingleElevator(unittest.TestCase):
     def setUp(self):
         self.params = EnvironmentParameters(
             number_of_elevators=1,
+            elevator_capacity=10,
             number_of_floors=13,
             elevator_acceleration_duration=1,
             elevator_speed=1/3,
