@@ -93,7 +93,7 @@ def run_simulation(
         environment_parameters,
         person_stream,
         brain,
-        state_change_hook = lambda *args: None
+        state_change_listeners = []
 ):
 
     environment_state, elevators = _init_state(environment_parameters)
@@ -103,10 +103,12 @@ def run_simulation(
         environment_parameters.idle_time
     )
 
-    state_change_hook(environment_state, NoEvent)
+    for state_change_listener in state_change_listeners:
+        state_change_listener(None, NoEvent, environment_state)
     brain.init(environment_state)
     while environment_stream.has_next_event():
         next_event = environment_stream.get_next_event(environment_state.time)
+        old_environment_state = environment_state
         environment_state = next_state(environment_state, next_event)
         next_elevator_events = environment_stream.peek_elevator_streams()
         environment_state = update_elevator_positions(
@@ -115,7 +117,8 @@ def run_simulation(
             next_elevator_events
         )
 
-        state_change_hook(environment_state, next_event)
+        for state_change_listener in state_change_listeners:
+            state_change_listener(old_environment_state, next_event, environment_state)
         if type(next_event) is NewPersonEvent or type(next_event) is OpenDoorEvent:
             next_actions = brain.get_next_actions(environment_state, next_event)
             for action in next_actions:
@@ -348,6 +351,8 @@ def action_to_events(action, env_state, parameters):
         raise Exception("Can't move to an interpolation of floors")
     if len(elevator_state.persons) + len(action.persons_to_load) > parameters.elevator_capacity:
         raise Exception("Can't exceed the elevator capacity")
+    if action.destination < 0 or action.destination >= parameters.number_of_floors:
+        raise Exception('The floor does not exist')
 
     if elevator_state.direction == Direction.NONE:
         if action.persons_to_load:

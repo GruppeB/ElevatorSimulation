@@ -1,0 +1,9 @@
+{
+    "number_of_elevators": 1,
+    "elevator_capacity": 10,
+    "number_of_floors": 13,
+    "elevator_acceleration_duration": 2,
+    "elevator_speed": 3,
+    "door_duration": 2,
+    "idle_time": Infinity
+}

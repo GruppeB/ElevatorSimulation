@@ -87,7 +87,7 @@ class RunSimulationSingleElevator(unittest.TestCase):
             self.params,
             person_stream,
             brain,
-            state_change_hook
+            [state_change_hook]
         )
         self.assertEqual(time, 127)
         self.assertEqual(statistics.total_service_time, 25)
