@@ -81,13 +81,14 @@ class RunSimulationSingleElevator(unittest.TestCase):
             )
         ])
 
-        state_change_hook = Mock()
+        simulation_listener = Mock()
+        simulation_listener.env_state_has_changed = Mock()
 
         time, statistics = run_simulation(
             self.params,
             person_stream,
             brain,
-            [state_change_hook]
+            [simulation_listener]
         )
         self.assertEqual(time, 127)
         self.assertEqual(statistics.total_service_time, 25)
@@ -95,7 +96,7 @@ class RunSimulationSingleElevator(unittest.TestCase):
         self.assertEqual(statistics.served_persons, 1)
 
         self.assertEqual(brain.get_next_actions.call_count, 3)
-        self.assertEqual(state_change_hook.call_count, 12)
+        self.assertEqual(simulation_listener.env_state_has_changed.call_count, 12)
 
 
 

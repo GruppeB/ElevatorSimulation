@@ -73,6 +73,18 @@ class EnvironmentState(namedtuple(
 
 Elevator = namedtuple('Elevator', ['id'])
 
+class SimulationListener():
+    def env_state_has_changed(self):
+        pass
+
+    def done(self):
+        pass
+
+EnvironmentStateChange = namedtuple(
+    'EnvironmentStateChange',
+    ['old_env_state', 'event', 'new_env_state']
+)
+
 def _init_state(environment_parameters):
 
     elevators = [Elevator(i) for i in range(environment_parameters.number_of_elevators)]
@@ -93,7 +105,7 @@ def run_simulation(
         environment_parameters,
         person_stream,
         brain,
-        state_change_listeners = []
+        simulation_listeners = []
 ):
 
     environment_state, elevators = _init_state(environment_parameters)
@@ -103,8 +115,8 @@ def run_simulation(
         environment_parameters.idle_time
     )
 
-    for state_change_listener in state_change_listeners:
-        state_change_listener(None, NoEvent, environment_state)
+    for listener in simulation_listeners:
+        listener.env_state_has_changed(EnvironmentStateChange(None, NoEvent, environment_state))
     brain.init(environment_state)
     while environment_stream.has_next_event():
         next_event = environment_stream.get_next_event(environment_state.time)
@@ -117,8 +129,13 @@ def run_simulation(
             next_elevator_events
         )
 
-        for state_change_listener in state_change_listeners:
-            state_change_listener(old_environment_state, next_event, environment_state)
+        environment_state_change = EnvironmentStateChange(
+            old_env_state = old_environment_state,
+            event = next_event,
+            new_env_state = environment_state
+        )
+        for listener in simulation_listeners:
+            listener.env_state_has_changed(environment_state_change)
         if type(next_event) is NewPersonEvent or type(next_event) is OpenDoorEvent:
             next_actions = brain.get_next_actions(environment_state, next_event)
             for action in next_actions:
@@ -128,6 +145,9 @@ def run_simulation(
                     environment_parameters
                 )
                 environment_stream.update_elevator_stream(elevator_stream_update)
+
+    for listener in simulation_listeners:
+        listener.done()
 
     return environment_state.time, environment_state.statistics
 

@@ -6,9 +6,7 @@ from unittest import defaultTestLoader, TestResult
 from intellivator import elevator_environment
 from intellivator.PersonStream import PersonStream
 from intellivator.SimpleSingleElevator import SimpleSingleElevator
-from intellivator.simulation_output import SimulationDump
-from intellivator.simulation_output import ProgressOutput
-from intellivator.simulation_output import write_summary
+from intellivator.simulation_output import *
 
 class TermColor:
     PURPLE = '\033[95m'
@@ -32,6 +30,17 @@ def run_tests():
 
     return result.wasSuccessful()
 
+def create_data_listeners():
+    listeners = []
+
+    listeners.append(StateChangeTimeSeries(
+        ('\# waiting persons',),
+        number_of_persons_waiting,
+        open('data/waiting_persons.data', 'w')
+    ))
+
+    return listeners
+
 def run(args):
     print()
 
@@ -49,12 +58,13 @@ def run(args):
     else:
         raise Exception('Brain not recognized')
 
-    state_change_listeners = []
+    simulation_listeners = []
 
-    simulation_dump = None
-    if args.dump_file:
-        simulation_dump = SimulationDump(args.dump_file, params)
-        state_change_listeners.append(simulation_dump.env_state_has_changed)
+    if args.save_data:
+        simulation_listeners.extend(create_plot_data_listeners())
+
+    if args.state_dump_file:
+        simulation_listeners.append(StateDump(args.state_dump_file, params))
 
     print('Running simulation with ' + TermColor.BOLD + args.brain + TermColor.ENDC)
 
@@ -62,21 +72,15 @@ def run(args):
     print('-' * 80)
     print()
 
-    progress_output = ProgressOutput(args.arrivals_file, sys.stdout)
-    state_change_listeners.append(progress_output.env_state_has_changed)
+    simulation_listeners.append(ProgressOutput(args.arrivals_file, sys.stdout))
 
     personstream = PersonStream(args.arrivals_file)
     duration, statistics = elevator_environment.run_simulation(
         params,
         personstream,
         brain,
-        state_change_listeners
+        simulation_listeners
     )
-
-    progress_output.done()
-
-    if simulation_dump:
-        simulation_dump.close()
 
     print()
     print('-' * 80)
@@ -110,7 +114,7 @@ def main():
         help = 'Which elevator brain to use'
     )
     parser.add_argument(
-        '--dump-file',
+        '-s', '--state-dump-file',
         type = argparse.FileType('w'),
         help = 'Dump simulation data to this file'
     )
@@ -118,6 +122,11 @@ def main():
         '--ignore-tests',
         action = 'store_true',
         help = "Don't run the tests"
+    )
+    parser.add_argument(
+        '-d', '--save-data',
+        action = 'store_true',
+        help = 'Save simulation data in the data folder'
     )
 
     run(parser.parse_args())
