@@ -1,5 +1,36 @@
 # Heis
 
+## Overview
+
+### Running simulations
+
+All simulations can be ran through the `run.py` script. This script is self documenting.
+Learn how to use it by running:
+```
+./run.py -h
+```
+
+### Plots
+
+If you specify to save simulation data when you run a simulation you can plot the data afterwards with the `plot.py` script.
+Learn how to use it and what plots are available by running:
+```
+./plot.py -h
+```
+**NB!** You need gnuplot for this to work.
+
+### Other
+To clean simulation data and other temporary files run the `clean.sh` script.
+
+## Input
+
+### Environment parameters
+Environment parameters (number of elevators, elevator speed, etc) must be passed in as a Json file.
+
+**# Todo**
+- Describe environment parameters
+- Describe arrivals file format
+
 ## Output
 A dump of the simulation is available in text format. First line will contain:
 ```
