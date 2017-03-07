@@ -30,16 +30,67 @@ def run_tests():
 
     return result.wasSuccessful()
 
-def create_data_listeners():
-    listeners = []
+def create_data_listeners(params):
+    return [
+        SimulationTimeSeries(
+            column_names = ('# waiting persons',),
+            data_file = open('data/waiting_persons.data', 'w'),
+            state_changed = lambda c: (len(c.new_env_state.waiting_persons),)
+        ),
+        SimulationTimeSeries(
+            column_names = tuple(
+                '# persons in elevator {}'.format(i)
+                for i in range(0, params.number_of_elevators)
+            ),
+            data_file = open('data/persons_in_elevators.data', 'w'),
+            state_changed = lambda c: tuple(
+                len(elevator_state.persons)
+                for elevator_state in c.new_env_state.elevator_states.values()
+            )
+        ),
+        SimulationTimeSeries(
+            column_names = ('Waiting time',),
+            data_file = open('data/waiting_times.data', 'w'),
+            person_picked_up = lambda t, wp, e: (t - wp.person.arrival_time,)
+        ),
+        SimulationTimeSeries(
+            column_names = ('Service time',),
+            data_file = open('data/service_times.data', 'w'),
+            person_finished = lambda t, p, e: (t - p.arrival_time,)
+        )
+    ]
 
-    listeners.append(StateChangeTimeSeries(
-        ('\# waiting persons',),
-        number_of_persons_waiting,
-        open('data/waiting_persons.data', 'w')
-    ))
-
-    return listeners
+def create_statistics(params):
+    return [
+        SimulationStatistic(
+            name = 'Served persons',
+            start_value = 0,
+            person_finished = lambda v, *x: v + 1
+        ),
+        SimulationStatistic(
+            name = 'Total waiting time',
+            start_value = 0,
+            person_picked_up = lambda v, t, wp, e: v + t - wp.person.arrival_time
+        ),
+        SimulationStatistic(
+            name = 'Average waiting time',
+            start_value = (0, 0),
+            person_picked_up = lambda v, t, wp, e: (v[0] + t - wp.person.arrival_time, v[1]),
+            person_finished = lambda v, *x: (v[0], v[1] + 1),
+            result = lambda v: v[0] / v[1]
+        ),
+        SimulationStatistic(
+            name = 'Total service time',
+            start_value = 0,
+            person_finished = lambda v, t, p, e: v + t - p.arrival_time
+        ),
+        SimulationStatistic(
+            name = 'Average service time',
+            start_value = (0, 0),
+            person_finished = lambda v, t, p, e: (v[0] + t - p.arrival_time, v[1] + 1),
+            result = lambda v: v[0] / v[1]
+        ),
+    ]
 
 def run(args):
     print()
@@ -60,8 +111,11 @@ def run(args):
 
     simulation_listeners = []
 
+    statistics = create_statistics(params)
+    simulation_listeners.extend(statistics)
+
     if args.save_data:
-        simulation_listeners.extend(create_plot_data_listeners())
+        simulation_listeners.extend(create_data_listeners(params))
 
     if args.state_dump_file:
         simulation_listeners.append(StateDump(args.state_dump_file, params))
@@ -75,7 +129,7 @@ def run(args):
     simulation_listeners.append(ProgressOutput(args.arrivals_file, sys.stdout))
 
     personstream = PersonStream(args.arrivals_file)
-    duration, statistics = elevator_environment.run_simulation(
+    duration = elevator_environment.run_simulation(
         params,
         personstream,
         brain,

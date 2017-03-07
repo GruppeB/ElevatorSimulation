@@ -84,16 +84,13 @@ class RunSimulationSingleElevator(unittest.TestCase):
         simulation_listener = Mock()
         simulation_listener.env_state_has_changed = Mock()
 
-        time, statistics = run_simulation(
+        time = run_simulation(
             self.params,
             person_stream,
             brain,
             [simulation_listener]
         )
         self.assertEqual(time, 127)
-        self.assertEqual(statistics.total_service_time, 25)
-        self.assertEqual(statistics.total_waiting_time, 10)
-        self.assertEqual(statistics.served_persons, 1)
 
         self.assertEqual(brain.get_next_actions.call_count, 3)
         self.assertEqual(simulation_listener.env_state_has_changed.call_count, 12)

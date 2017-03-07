@@ -54,17 +54,9 @@ ElevatorState = namedtuple(
         'door_open'
     ]
 )
-Statistics = namedtuple(
-    'Statistics',
-    [
-        'total_service_time',
-        'total_waiting_time',
-        'served_persons'
-    ]
-)
 class EnvironmentState(namedtuple(
     'EnvironmentState',
-    ['elevator_states', 'time', 'waiting_persons', 'statistics']
+    ['elevator_states', 'time', 'waiting_persons']
 )):
     def _replace_elevator_state(self, elevator, **kwargs):
         new_elevator_states = dict(self.elevator_states)
@@ -74,7 +66,13 @@ class EnvironmentState(namedtuple(
 Elevator = namedtuple('Elevator', ['id'])
 
 class SimulationListener():
-    def env_state_has_changed(self):
+    def env_state_has_changed(self, env_state_change):
+        pass
+
+    def person_finished(self, time, person, elevator):
+        pass
+
+    def person_picked_up(self, time, waiting_person, elevator):
         pass
 
     def done(self):
@@ -93,13 +91,7 @@ def _init_state(environment_parameters):
         for elevator in elevators
     }
 
-    stats = Statistics(
-        total_service_time=0,
-        total_waiting_time=0,
-        served_persons=0
-    )
-
-    return EnvironmentState(elevator_states, 0, tuple(), stats), elevators
+    return EnvironmentState(elevator_states, 0, tuple()), elevators
 
 def run_simulation(
         environment_parameters,
@@ -121,7 +113,7 @@ def run_simulation(
     while environment_stream.has_next_event():
         next_event = environment_stream.get_next_event(environment_state.time)
         old_environment_state = environment_state
-        environment_state = next_state(environment_state, next_event)
+        environment_state = next_state(environment_state, next_event, simulation_listeners)
         next_elevator_events = environment_stream.peek_elevator_streams()
         environment_state = update_elevator_positions(
             environment_state,
@@ -149,7 +141,7 @@ def run_simulation(
     for listener in simulation_listeners:
         listener.done()
 
-    return environment_state.time, environment_state.statistics
+    return environment_state.time
 
 
 
@@ -236,33 +228,25 @@ def next_state_new_person(env_state, event):
         waiting_persons = env_state.waiting_persons + (new_waiting_person,)
     )
 
-def next_state_open_door(env_state, event):
+def next_state_open_door(env_state, event, listeners):
     elevator_state = env_state.elevator_states[event.elevator]
     current_floor = elevator_state.position
     finished_persons = [
         p for p in elevator_state.persons
         if p.destination_floor == current_floor
     ]
+    for p in finished_persons:
+        for listener in listeners:
+            listener.person_finished(event.time, p, event.elevator)
 
     assert elevator_state.door_open == False
     assert elevator_state.direction == Direction.NONE
 
     env_state.elevator_states[event.elevator] = elevator_state
-    env_state = env_state._replace_elevator_state(
+    return env_state._replace_elevator_state(
         event.elevator,
         door_open = True,
         persons = tuple(p for p in elevator_state.persons if p not in finished_persons)
-    )
-
-    service_time_increase = sum([
-        event.time - p.arrival_time for p in finished_persons
-    ])
-    stats = env_state.statistics
-    return env_state._replace(
-        statistics = stats._replace(
-            total_service_time = stats.total_service_time + service_time_increase,
-            served_persons = stats.served_persons + len(finished_persons)
-        )
     )
 
 def next_state_close_door(env_state, event):
@@ -285,27 +269,22 @@ def next_state_elevator_arrival(env_state, event):
         direction = Direction.NONE
     )
 
-def next_state_load_elevator(env_state, event):
+def next_state_load_elevator(env_state, event, listeners):
     elevator_state = env_state.elevator_states[event.elevator]
     assert elevator_state.direction == Direction.NONE
     for p in event.persons_to_load:
         assert p.arrival_floor == elevator_state.position
+        for listener in listeners:
+            listener.person_picked_up(event.time, p, event.elevator)
 
     env_state = env_state._replace_elevator_state(
         event.elevator,
         persons = elevator_state.persons + tuple(wp.person for wp in event.persons_to_load)
     )
-    stats = env_state.statistics
-    waiting_time_increase = sum([
-        env_state.time - p.person.arrival_time for p in event.persons_to_load
-    ])
     return env_state._replace(
         waiting_persons = tuple(
             wp for wp in env_state.waiting_persons
             if wp not in event.persons_to_load
-        ),
-        statistics = stats._replace(
-            total_waiting_time = stats.total_waiting_time + waiting_time_increase
         )
     )
 
@@ -315,18 +294,18 @@ def next_state_elevator_departure(env_state, event):
         direction = event.direction
     )
 
-def next_state(env_state, event):
+def next_state(env_state, event, listeners = []):
     new_state = env_state
     if type(event) == NewPersonEvent:
         new_state = next_state_new_person(env_state, event)
     elif type(event) == OpenDoorEvent:
-        new_state = next_state_open_door(env_state, event)
+        new_state = next_state_open_door(env_state, event, listeners)
     elif type(event) == CloseDoorEvent:
         new_state = next_state_close_door(env_state, event)
     elif type(event) == ElevatorArrivalEvent:
         new_state = next_state_elevator_arrival(env_state, event)
     elif type(event) == LoadElevatorEvent:
-        new_state = next_state_load_elevator(env_state, event)
+        new_state = next_state_load_elevator(env_state, event, listeners)
     elif type(event) == ElevatorDepartureEvent:
         new_state = next_state_elevator_departure(env_state, event)
     elif type(event) == TimePassedEvent:

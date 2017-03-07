@@ -85,8 +85,6 @@ class NextState(unittest.TestCase):
             Person(arrival_time = 20, destination_floor = 2),
             state.elevator_states[self.elevators[1]].persons
         )
-        self.assertEqual(state.statistics.served_persons, 1)
-        self.assertEqual(state.statistics.total_service_time, 41-20)
 
     def test_load_elevator(self):
         state = self.env_state

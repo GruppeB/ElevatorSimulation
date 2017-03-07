@@ -61,46 +61,75 @@ class ProgressOutput(SimulationListener):
         self.output_file.write('\n')
 
 
-class StateChangeStatistic(SimulationListener):
-    def __init__(self, start_value, map_reduce):
+class SimulationStatistic(SimulationListener):
+    def __init__(
+            self,
+            name,
+            start_value,
+            state_changed = lambda v, *x: v,
+            person_finished = lambda v, *x: v,
+            person_picked_up = lambda v, *x: v,
+            result = lambda v: v
+    ):
+        self.name = name
         self._value = start_value
-        self._map_reduce = map_reduce
+        self._state_changed = state_changed
+        self._person_finished = person_finished
+        self._person_picked_up = person_picked_up
+        self._result = result
 
     def env_state_has_changed(self, env_state_change):
-        self._value = map_reduce(self._value, env_state_change)
+        self._value = self._state_changed(self._value, env_state_change)
+
+    def person_finished(self, time, person, elevator):
+        self._value = self._person_finished(self._value, time, person, elevator)
+
+    def person_picked_up(self, time, waiting_person, elevator):
+        self._value = self._person_picked_up(self._value, time, waiting_person, elevator)
 
     def result(self):
-        return self._value
+        return self._result(self._value)
 
-class StateChangeTimeSeries(SimulationListener):
-    def __init__(self, column_names, state_change_to_data_point, data_file):
-        self._state_change_to_data_point = state_change_to_data_point
+class SimulationTimeSeries(SimulationListener):
+    def __init__(
+            self,
+            column_names,
+            data_file,
+            state_changed = None,
+            person_finished = None,
+            person_picked_up = None
+    ):
+        self._state_changed = state_changed
+        self._person_finished = person_finished
+        self._person_picked_up = person_picked_up
         self._data_file = data_file
 
         column_names = ('Time',) + column_names
         self._data_file.write('\t'.join(map(lambda s: '"{}"'.format(s), column_names)) + '\n')
 
     def env_state_has_changed(self, env_state_change):
-        data_point = self._state_change_to_data_point(env_state_change)
-        data_point = (env_state_change.new_env_state.time,) + data_point
-        self._data_file.write('\t'.join(map(str, data_point)) + '\n')
+        if self._state_changed:
+            data_point = self._state_changed(env_state_change)
+            data_point = (env_state_change.new_env_state.time,) + data_point
+            self._data_file.write('\t'.join(map(str, data_point)) + '\n')
+
+    def person_finished(self, time, person, elevator):
+        if self._person_finished:
+            data_point = self._person_finished(time, person, elevator)
+            data_point = (time,) + data_point
+            self._data_file.write('\t'.join(map(str, data_point)) + '\n')
+
+    def person_picked_up(self, time, waiting_person, elevator):
+        if self._person_picked_up:
+            data_point = self._person_picked_up(time, waiting_person, elevator)
+            data_point = (time,) + data_point
+            self._data_file.write('\t'.join(map(str, data_point)) + '\n')
 
     def done(self):
         self._data_file.close()
 
 
-def number_of_persons_waiting(env_state_change):
-    return (len(env_state_change.new_env_state.waiting_persons),)
-
-
 def write_summary(duration, statistics, output_file):
-    output_file.write('Simulation duration:  {:.2f}\n'.format(duration))
-    output_file.write('Served persons:       {}\n'.format(statistics.served_persons))
-    output_file.write('Average waiting time: {:.2f}\n'.format(
-        statistics.total_waiting_time / statistics.served_persons)
-    )
-    output_file.write('Total waiting time:   {:.2f}\n'.format(statistics.total_waiting_time))
-    output_file.write('Average service time: {:.2f}\n'.format(
-        statistics.total_service_time / statistics.served_persons)
-    )
-    output_file.write('Total service time:   {:.2f}\n'.format(statistics.total_service_time))
+    output_file.write('{:<25s} {:.2f}\n'.format('Simulation duration:', duration))
+    for statistic in statistics:
+        print('{:<25s} {:.2f}'.format(statistic.name + ':', statistic.result()))
