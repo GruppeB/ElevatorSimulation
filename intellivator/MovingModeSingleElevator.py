@@ -28,8 +28,7 @@ class MovingModeSingleElevator():
                 self.last_arrivals.pop(0)
 
         if not env_state.waiting_persons and not elevator_state.persons:
-            rest_floor = int(sum(self.last_arrivals) / 15 + 0.5)
-            max(set(self.last_arrivals), key=self.last_arrivals.count)
+            rest_floor = max(set(self.last_arrivals), key=self.last_arrivals.count)
             if position == rest_floor:
                 return []
             else:
