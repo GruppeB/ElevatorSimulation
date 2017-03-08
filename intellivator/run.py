@@ -7,6 +7,7 @@ from intellivator import elevator_environment
 from intellivator.PersonStream import PersonStream
 from intellivator.SimpleSingleElevator import SimpleSingleElevator
 from intellivator.MovingAverageSingleElevator import MovingAverageSingleElevator
+from intellivator.MovingModeSingleElevator import MovingModeSingleElevator
 from intellivator.simulation_output import *
 
 class TermColor:
@@ -109,6 +110,8 @@ def run(args):
         brain = SimpleSingleElevator(params)
     elif args.brain == 'MovingAverageSingleElevator':
         brain = MovingAverageSingleElevator(params)
+    elif args.brain == 'MovingModeSingleElevator':
+        brain = MovingModeSingleElevator(params)
     else:
         raise Exception('Brain not recognized')
 
@@ -167,7 +170,7 @@ def main():
     )
     parser.add_argument(
         'brain',
-        choices = ['SimpleSingleElevator', 'MovingAverageSingleElevator'],
+        choices = ['SimpleSingleElevator', 'MovingAverageSingleElevator', 'MovingModeSingleElevator'],
         help = 'Which elevator brain to use'
     )
     parser.add_argument(
