@@ -6,6 +6,7 @@ from unittest import defaultTestLoader, TestResult
 from intellivator import elevator_environment
 from intellivator.PersonStream import PersonStream
 from intellivator.SimpleSingleElevator import SimpleSingleElevator
+from intellivator.MovingAverageSingleElevator import MovingAverageSingleElevator
 from intellivator.simulation_output import *
 
 class TermColor:
@@ -106,6 +107,8 @@ def run(args):
     brain = None
     if args.brain == 'SimpleSingleElevator':
         brain = SimpleSingleElevator(params)
+    elif args.brain == 'MovingAverageSingleElevator':
+        brain = MovingAverageSingleElevator(params)
     else:
         raise Exception('Brain not recognized')
 
@@ -164,7 +167,7 @@ def main():
     )
     parser.add_argument(
         'brain',
-        choices = ['SimpleSingleElevator'],
+        choices = ['SimpleSingleElevator', 'MovingAverageSingleElevator'],
         help = 'Which elevator brain to use'
     )
     parser.add_argument(
