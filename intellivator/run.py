@@ -10,6 +10,12 @@ from intellivator.MovingAverageSingleElevator import MovingAverageSingleElevator
 from intellivator.MovingModeSingleElevator import MovingModeSingleElevator
 from intellivator.simulation_output import *
 
+elevator_brains = {
+    'SimpleSingleElevator': SimpleSingleElevator,
+    'MovingAverageSingleElevator': MovingAverageSingleElevator,
+    'MovingModeSingleElevator': MovingModeSingleElevator
+}
+
 class TermColor:
     PURPLE = '\033[95m'
     OKBLUE = '\033[94m'
@@ -105,15 +111,9 @@ def run(args):
         **json.load(args.env_params_file)
     )
 
-    brain = None
-    if args.brain == 'SimpleSingleElevator':
-        brain = SimpleSingleElevator(params)
-    elif args.brain == 'MovingAverageSingleElevator':
-        brain = MovingAverageSingleElevator(params)
-    elif args.brain == 'MovingModeSingleElevator':
-        brain = MovingModeSingleElevator(params)
-    else:
+    if args.brain not in elevator_brains:
         raise Exception('Brain not recognized')
+    brain = elevator_brains[args.brain](params)
 
     simulation_listeners = []
 
@@ -170,7 +170,7 @@ def main():
     )
     parser.add_argument(
         'brain',
-        choices = ['SimpleSingleElevator', 'MovingAverageSingleElevator', 'MovingModeSingleElevator'],
+        choices = list(elevator_brains.keys()),
         help = 'Which elevator brain to use'
     )
     parser.add_argument(
