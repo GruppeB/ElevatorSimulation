@@ -3,7 +3,7 @@
     "elevator_capacity": 10,
     "number_of_floors": 13,
     "elevator_acceleration_duration": 2,
-    "elevator_speed": 3,
+    "elevator_speed": 0.3333333333333333,
     "door_duration": 2,
     "idle_time": Infinity
 }
