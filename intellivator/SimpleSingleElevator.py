@@ -16,10 +16,24 @@ class SimpleSingleElevator():
             delta_pos = waiting_person.arrival_floor - elevator_position
             return delta_pos * self.mode > 0
 
+    def _get_rest_floor(self, env_state, event):
+        return None
+
     def get_next_actions(self, env_state, event):
         elevator_state = env_state.elevator_states[self.elevator]
         position = elevator_state.position
         persons = elevator_state.persons
+
+        rest_floor = self._get_rest_floor(env_state, event)
+        if not env_state.waiting_persons and not elevator_state.persons:
+            if rest_floor == None or position == rest_floor:
+                return []
+            else:
+                return [Action(
+                    elevator = self.elevator,
+                    persons_to_load = [],
+                    destination = rest_floor
+                )]
 
         if elevator_state.direction != Direction.NONE:
             return []
