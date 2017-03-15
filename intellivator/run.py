@@ -8,12 +8,16 @@ from intellivator.PersonStream import PersonStream
 from intellivator.SimpleSingleElevator import SimpleSingleElevator
 from intellivator.MovingAverageSingleElevator import MovingAverageSingleElevator
 from intellivator.MovingModeSingleElevator import MovingModeSingleElevator
+from intellivator.HistoryAverageSingleElevator import HistoryAverageSingleElevator
+from intellivator.HistoryModeSingleElevator import HistoryModeSingleElevator
 from intellivator.simulation_output import *
 
 elevator_brains = {
     'SimpleSingleElevator': SimpleSingleElevator,
     'MovingAverageSingleElevator': MovingAverageSingleElevator,
-    'MovingModeSingleElevator': MovingModeSingleElevator
+    'MovingModeSingleElevator': MovingModeSingleElevator,
+    'HistoryAverageSingleElevator': HistoryAverageSingleElevator,
+    'HistoryModeSingleElevator': HistoryModeSingleElevator
 }
 
 class TermColor:
