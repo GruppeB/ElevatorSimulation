@@ -1,6 +1,6 @@
 import random
 import numpy as np
-
+import sys
 
 
 def lagDoc(ankomst, avreise, lunch, lunch_avreise, mellom, etgOversikt):
@@ -87,8 +87,8 @@ def lagDoc(ankomst, avreise, lunch, lunch_avreise, mellom, etgOversikt):
 
 def main():
     ETG = 13
-    N = 60
-    N_uniform = 20
+    N = int(sys.argv[1])
+    N_uniform = int(sys.argv[2])
     sigma_ankomst = 2000 #standardavvik
     sigma_avreise = 1600 #standardavvik
     mu_ankomst = 28800 #forventingsverdi
@@ -111,7 +111,7 @@ def main():
     avreise = np.append(norm_avreise, unif_avreise)
     avreise = np.sort(avreise)
 
-    N_lunch = int(N*0.7)
+    N_lunch = int(N*0.4)
     #print(N_lunch)
     lunchtid = mu_ankomst*11.75/8
     sigma_lunch = 10*60 #10 min * 60 sek/min
