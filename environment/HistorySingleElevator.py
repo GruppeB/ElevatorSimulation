@@ -1,5 +1,5 @@
-from intellivator.SimpleSingleElevator import SimpleSingleElevator
-from intellivator.elevator_environment import Action, Direction, NewPersonEvent
+from environment.SimpleSingleElevator import SimpleSingleElevator
+from environment.elevator_environment import Action, Direction, NewPersonEvent
 
 class HistorySingleElevator(SimpleSingleElevator):
     def __init__(self, env_params):

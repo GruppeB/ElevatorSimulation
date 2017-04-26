@@ -1,6 +1,6 @@
 import unittest
-from intellivator.elevator_environment import *
-from intellivator.elevator_environment import _init_state
+from environment.elevator_environment import *
+from environment.elevator_environment import _init_state
 
 class NextState(unittest.TestCase):
 

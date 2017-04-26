@@ -3,14 +3,14 @@ import sys
 import json
 from unittest import defaultTestLoader, TestResult
 
-from intellivator import elevator_environment
-from intellivator.PersonStream import PersonStream
-from intellivator.SimpleSingleElevator import SimpleSingleElevator
-from intellivator.MovingAverageSingleElevator import MovingAverageSingleElevator
-from intellivator.MovingModeSingleElevator import MovingModeSingleElevator
-from intellivator.HistoryAverageSingleElevator import HistoryAverageSingleElevator
-from intellivator.HistoryModeSingleElevator import HistoryModeSingleElevator
-from intellivator.simulation_output import *
+from environment import elevator_environment
+from environment.PersonStream import PersonStream
+from environment.SimpleSingleElevator import SimpleSingleElevator
+from environment.MovingAverageSingleElevator import MovingAverageSingleElevator
+from environment.MovingModeSingleElevator import MovingModeSingleElevator
+from environment.HistoryAverageSingleElevator import HistoryAverageSingleElevator
+from environment.HistoryModeSingleElevator import HistoryModeSingleElevator
+from environment.simulation_output import *
 
 elevator_brains = {
     'SimpleSingleElevator': SimpleSingleElevator,

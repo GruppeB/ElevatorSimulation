@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import Mock
-from intellivator.elevator_environment import *
-from intellivator.elevator_environment import _init_state
+from environment.elevator_environment import *
+from environment.elevator_environment import _init_state
 
 class PersonStreamStub():
     def __init__(self, person_events):

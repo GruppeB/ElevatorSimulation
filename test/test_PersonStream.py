@@ -1,6 +1,6 @@
 import unittest
-from intellivator.PersonStream import PersonStream
-from intellivator.elevator_environment import NewPersonEvent, NoEvent
+from environment.PersonStream import PersonStream
+from environment.elevator_environment import NewPersonEvent, NoEvent
 from io import StringIO
 
 class PersonStreamTest(unittest.TestCase):

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-import intellivator.run
+import environment.run
 
 def main():
-    intellivator.run.main()
+    environment.run.main()
 
 if __name__ == "__main__":
     main()

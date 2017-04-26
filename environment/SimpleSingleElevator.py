@@ -1,4 +1,4 @@
-from intellivator.elevator_environment import Action, Direction
+from environment.elevator_environment import Action, Direction
 
 class SimpleSingleElevator():
     def __init__(self, env_params):
