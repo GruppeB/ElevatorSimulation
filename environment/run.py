@@ -12,7 +12,7 @@ from agent.HistoryAverageSingleElevator import HistoryAverageSingleElevator
 from agent.HistoryModeSingleElevator import HistoryModeSingleElevator
 from environment.simulation_output import *
 
-elevator_brains = {
+elevator_agents = {
     'SimpleSingleElevator': SimpleSingleElevator,
     'MovingAverageSingleElevator': MovingAverageSingleElevator,
     'MovingModeSingleElevator': MovingModeSingleElevator,
@@ -115,9 +115,9 @@ def run(args):
         **json.load(args.env_params_file)
     )
 
-    if args.brain not in elevator_brains:
-        raise Exception('Brain not recognized')
-    brain = elevator_brains[args.brain](params)
+    if args.agent not in elevator_agents:
+        raise Exception('Agent not recognized')
+    agent = elevator_agents[args.agent](params)
 
     simulation_listeners = []
 
@@ -130,7 +130,7 @@ def run(args):
     if args.state_dump_file:
         simulation_listeners.append(StateDump(args.state_dump_file, params))
 
-    print('Running simulation with ' + TermColor.BOLD + args.brain + TermColor.ENDC)
+    print('Running simulation with ' + TermColor.BOLD + args.agent + TermColor.ENDC)
 
     print()
     print('-' * 80)
@@ -142,7 +142,7 @@ def run(args):
     duration = elevator_environment.run_simulation(
         params,
         personstream,
-        brain,
+        agent,
         simulation_listeners
     )
 
@@ -173,9 +173,9 @@ def main():
         help = 'JSON file with environment paramaters'
     )
     parser.add_argument(
-        'brain',
-        choices = list(elevator_brains.keys()),
-        help = 'Which elevator brain to use'
+        'agent',
+        choices = list(elevator_agents.keys()),
+        help = 'Which elevator agent to use'
     )
     parser.add_argument(
         '-s', '--state-dump-file',
