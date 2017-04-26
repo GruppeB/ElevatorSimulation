@@ -1,4 +1,4 @@
-from intellivator.elevator_environment import NewPersonEvent, NoEvent
+from environment.elevator_environment import NewPersonEvent, NoEvent
 
 
 class PersonStream():

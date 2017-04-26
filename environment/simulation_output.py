@@ -1,7 +1,7 @@
 from math import log10, ceil
 
-from intellivator.elevator_environment import SimulationListener
-from intellivator.elevator_environment import NewPersonEvent
+from environment.elevator_environment import SimulationListener
+from environment.elevator_environment import NewPersonEvent
 
 
 

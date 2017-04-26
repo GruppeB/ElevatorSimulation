@@ -96,7 +96,7 @@ def _init_state(environment_parameters):
 def run_simulation(
         environment_parameters,
         person_stream,
-        brain,
+        agent,
         simulation_listeners = []
 ):
 
@@ -109,7 +109,7 @@ def run_simulation(
 
     for listener in simulation_listeners:
         listener.env_state_has_changed(EnvironmentStateChange(None, NoEvent, environment_state))
-    brain.init(environment_state)
+    agent.init(environment_state)
     while environment_stream.has_next_event():
         next_event = environment_stream.get_next_event(environment_state.time)
         old_environment_state = environment_state
@@ -129,7 +129,7 @@ def run_simulation(
         for listener in simulation_listeners:
             listener.env_state_has_changed(environment_state_change)
         if type(next_event) is NewPersonEvent or type(next_event) is OpenDoorEvent:
-            next_actions = brain.get_next_actions(environment_state, next_event)
+            next_actions = agent.get_next_actions(environment_state, next_event)
             for action in next_actions:
                 elevator_stream_update = action_to_events(
                     action,

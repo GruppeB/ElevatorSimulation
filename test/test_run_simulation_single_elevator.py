@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import Mock
-from intellivator.elevator_environment import *
-from intellivator.elevator_environment import _init_state
+from environment.elevator_environment import *
+from environment.elevator_environment import _init_state
 
 class PersonStreamStub():
     def __init__(self, person_events):
@@ -47,7 +47,7 @@ class RunSimulationSingleElevator(unittest.TestCase):
         125: OpenDoorEvent
         127: CloseDoorEvent
         '''
-        class Brain():
+        class Agent():
             def init(self, env_state):
                 self.elevator = list(env_state.elevator_states.keys())[0]
 
@@ -71,8 +71,8 @@ class RunSimulationSingleElevator(unittest.TestCase):
                 else:
                     return []
 
-        brain = Brain()
-        brain.get_next_actions = Mock(side_effect=brain.get_next_actions)
+        agent = Agent()
+        agent.get_next_actions = Mock(side_effect=agent.get_next_actions)
         person_stream = PersonStreamStub([
             NewPersonEvent(
                 time = 100,
@@ -87,12 +87,12 @@ class RunSimulationSingleElevator(unittest.TestCase):
         time = run_simulation(
             self.params,
             person_stream,
-            brain,
+            agent,
             [simulation_listener]
         )
         self.assertEqual(time, 127)
 
-        self.assertEqual(brain.get_next_actions.call_count, 3)
+        self.assertEqual(agent.get_next_actions.call_count, 3)
         self.assertEqual(simulation_listener.env_state_has_changed.call_count, 12)
 
 
