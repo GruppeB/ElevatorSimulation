@@ -15,7 +15,7 @@ def run(args):
 
     print("\r0/{}".format(N_days), end="")
     for day in range(1, N_days+1):
-        call("python3 arrival_model.py {} {} cat > arrivaldata/day{}.txt".format(NN, NU, day), shell = True)
+        call("python3 environment/arrival_model.py {} {} cat > arrivaldata/day{}.txt".format(NN, NU, day), shell = True)
         print("\r{}/{}".format(day, N_days),end="")
     print()
 
@@ -23,7 +23,7 @@ def run(args):
     print("\r0/{}".format(N_weeks), end="")
 
     for week in range(1, N_weeks+1):
-        call("python3 arrival_merger.py {} cat > arrivaldata/week{}.txt".format(week, week), shell = True)
+        call("python3 environment/arrival_merger.py {} cat > arrivaldata/week{}.txt".format(week, week), shell = True)
         print("\r{}/{}".format(week, N_weeks), end="")
     print()
 
