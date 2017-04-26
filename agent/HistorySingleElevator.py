@@ -1,4 +1,4 @@
-from environment.SimpleSingleElevator import SimpleSingleElevator
+from agent.SimpleSingleElevator import SimpleSingleElevator
 from environment.elevator_environment import Action, Direction, NewPersonEvent
 
 class HistorySingleElevator(SimpleSingleElevator):

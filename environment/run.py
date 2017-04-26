@@ -5,11 +5,11 @@ from unittest import defaultTestLoader, TestResult
 
 from environment import elevator_environment
 from environment.PersonStream import PersonStream
-from environment.SimpleSingleElevator import SimpleSingleElevator
-from environment.MovingAverageSingleElevator import MovingAverageSingleElevator
-from environment.MovingModeSingleElevator import MovingModeSingleElevator
-from environment.HistoryAverageSingleElevator import HistoryAverageSingleElevator
-from environment.HistoryModeSingleElevator import HistoryModeSingleElevator
+from agent.SimpleSingleElevator import SimpleSingleElevator
+from agent.MovingAverageSingleElevator import MovingAverageSingleElevator
+from agent.MovingModeSingleElevator import MovingModeSingleElevator
+from agent.HistoryAverageSingleElevator import HistoryAverageSingleElevator
+from agent.HistoryModeSingleElevator import HistoryModeSingleElevator
 from environment.simulation_output import *
 
 elevator_brains = {
