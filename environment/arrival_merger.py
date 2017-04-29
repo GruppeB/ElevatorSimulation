@@ -11,4 +11,4 @@ for i in range(1,number_of_files+1):
     with open(filename, 'r') as file:
         for line in file:
             row = line.split()
-            print(float(row[0]) + i * seconds_in_day,'\t',row[1],'\t',row[2])
+            print(float(row[0]) + (i - 1) * seconds_in_day,'\t',row[1],'\t',row[2])
