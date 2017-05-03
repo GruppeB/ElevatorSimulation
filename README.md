@@ -1,6 +1,20 @@
-# Heis
+# ElevatorSimulation
+
+## Workflow
+1. Generate arrivals
+2. Run simulation
+3. Analyze and visualize results
 
 ## Overview
+
+### Generating arrivals
+
+Arrivals can be generated with the `generate_arrivals.py` script. This script is self documenting.
+Learn how to use it by running:
+```
+./generate_arrivals.py -h
+```
+Arrivals follow a simple format and can be generated from other sources if desirable.
 
 ### Running simulations
 
@@ -26,10 +40,7 @@ To clean simulation data and other temporary files run the `clean.sh` script.
 
 ### Environment parameters
 Environment parameters (number of elevators, elevator speed, etc) must be passed in as a Json file.
-
-**# Todo**
-- Describe environment parameters
-- Describe arrivals file format
+See [env_params.json](./env_params.json) for this is done.
 
 ## Output
 A dump of the simulation is available in text format. First line will contain:
